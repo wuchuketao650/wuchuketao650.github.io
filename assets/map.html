@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>地图选点</title>
-    <meta name="map-js-key" content="dd53e8338af9ba9d81b8134ef9d37d6d">
+    <meta name="map-js-key" content="cfd0a33795169855c6fa206f53b834bc">
     <style>
         * {
             margin: 0;
@@ -233,6 +233,11 @@ function showSuccess(message) {
                 if (typeof AMap === 'undefined') {
                     throw new Error('AMap API not loaded');
                 }
+                
+                // 打印当前使用的KEY用于调试
+                console.log('[Map] 初始化地图，当前KEY:', 'cfd0a33795169855c6fa206f53b834bc');
+                console.log('[Map] AMap对象:', AMap);
+                console.log('[Map] AMap版本:', AMap.version);
                 
                 // 创建地图实例
                 map = new AMap.Map('map', {
@@ -470,7 +475,7 @@ function loadMapAPI() {
                 }
                 
                 const script = document.createElement('script');
-                script.src = 'https://webapi.amap.com/maps?v=2.0&key=dd53e8338af9ba9d81b8134ef9d37d6d';
+                script.src = 'https://webapi.amap.com/maps?v=2.0&key=cfd0a33795169855c6fa206f53b834bc';
                 script.async = true;
                 
                 script.onload = function() {
@@ -491,14 +496,15 @@ function loadMapAPI() {
 
         // 延迟加载地图，避免安全问题
         window.addEventListener('load', function() {
+            console.log('[Map] 页面加载完成，准备加载地图API');
             setTimeout(function() {
                 loadMapAPI()
                     .then(() => {
-                        console.log('AMap API加载成功');
+                        console.log('[Map] AMap API加载成功，开始初始化地图');
                         initMap();
                     })
                     .catch((error) => {
-                        console.error('地图API加载失败:', error);
+                        console.error('[Map] 地图API加载失败:', error);
                         showError('地图服务不可用，请稍后重试');
                     });
             }, 200); // 延迟200ms加载，避免初始加载冲突
