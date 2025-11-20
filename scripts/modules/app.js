@@ -137,11 +137,14 @@ export function createApp() {
       event.preventDefault();
       elements.dropZone.classList.remove('dragover');
     });
-    elements.dropZone?.addEventListener('drop', (event) => {
+    elements.dropZone?.addEventListener('drop', async (event) => {
       event.preventDefault();
       elements.dropZone.classList.remove('dragover');
       const files = Array.from(event.dataTransfer?.files || []);
       state.fileHandle = null;
+      if (files.length === 1) {
+        state.fileHandle = await getFileHandleFromDataTransfer(event.dataTransfer);
+      }
       handleFiles(files);
     });
   }
@@ -709,6 +712,11 @@ export function createApp() {
   async function persistToOriginal(file) {
     if (!state.fileHandle || !file) return;
     try {
+      const canWrite = await ensureWritePermission(state.fileHandle);
+      if (!canWrite) {
+        ui.showToast('浏览器未授予写入权限，请使用“导出”保存', 'warning');
+        return;
+      }
       const writable = await state.fileHandle.createWritable();
       await writable.write(file);
       await writable.close();
@@ -774,6 +782,48 @@ export function createApp() {
   function syncDesiredNameFromInput() {
     if (elements.fileName) {
       state.desiredName = elements.fileName.value.trim();
+    }
+  }
+
+  async function getFileHandleFromDataTransfer(dataTransfer) {
+    if (!dataTransfer?.items) return null;
+    const items = Array.from(dataTransfer.items);
+    for (const item of items) {
+      if (item.kind !== 'file') continue;
+      if (typeof item.getAsFileSystemHandle !== 'function') {
+        return null;
+      }
+      try {
+        const handle = await item.getAsFileSystemHandle();
+        if (handle?.kind === 'file') {
+          return handle;
+        }
+      } catch (error) {
+        console.warn('无法从拖拽项目获取文件句柄:', error);
+      }
+    }
+    return null;
+  }
+
+  async function ensureWritePermission(handle) {
+    if (!handle) return false;
+    if (typeof handle.queryPermission !== 'function' || typeof handle.requestPermission !== 'function') {
+      return true;
+    }
+    const descriptor = { mode: 'readwrite' };
+    try {
+      const status = await handle.queryPermission(descriptor);
+      if (status === 'granted') {
+        return true;
+      }
+      if (status === 'denied') {
+        return false;
+      }
+      const request = await handle.requestPermission(descriptor);
+      return request === 'granted';
+    } catch (error) {
+      console.warn('写入权限请求失败:', error);
+      return false;
     }
   }
 
