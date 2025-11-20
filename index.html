@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="description" content="在线EXIF编辑器 - 拖放即可编辑图片元数据">
+    <meta name="map-api-key" content="dd53e8338af9ba9d81b8134ef9d37d6d">
+    <title>ExifEditor Web</title>
+    <link rel="icon" href="favicon.ico">
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <div id="app" class="app-container">
+        <header class="header">
+            <h1 class="title">ExifEditor Web</h1>
+            <div class="header-controls">
+                <button id="themeToggle" class="btn btn-icon" type="button" title="切换主题">🌙</button>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <section id="dropZone" class="drop-zone">
+                <div class="drop-zone-content">
+                    <div class="drop-icon">📸</div>
+                    <h2>拖放图片到这里</h2>
+                    <p>支持 JPEG、PNG、WebP 以及常见图片/视频格式（部分格式仅预览）</p>
+                    <input type="file" id="fileInput" class="file-input" multiple accept="image/*,video/*">
+                    <div class="drop-zone-actions">
+                        <button id="openFile" class="btn btn-primary" type="button">打开文件</button>
+                    </div>
+                    <p id="writableHint" class="drop-zone-hint hidden">
+                        在支持的浏览器中可直接写回原始文件（移动或旧版浏览器将回退到普通选择）。
+                    </p>
+                </div>
+            </section>
+
+            <section id="editor" class="editor hidden">
+                <div class="editor-layout">
+                    <div class="preview-panel">
+                        <div class="preview-header">
+                            <div class="preview-title">
+                                <h3>图片预览</h3>
+                                <div class="file-name-box">
+                                    <label for="fileName">文件名</label>
+                                    <input type="text" id="fileName" class="form-input" placeholder="例如：旅行照片.jpg">
+                                </div>
+                            </div>
+                            <div class="preview-controls">
+                                <button id="rotateLeft" class="btn btn-icon" type="button" title="左转">↺</button>
+                                <button id="rotateRight" class="btn btn-icon" type="button" title="右转">↻</button>
+                            </div>
+                        </div>
+                        <div class="preview-container">
+                            <img id="previewImage" class="preview-image" alt="预览图片">
+                            <video id="previewVideo" class="preview-image hidden" controls playsinline></video>
+                        </div>
+                    </div>
+
+                    <div class="exif-panel">
+                        <div class="panel-tabs">
+                            <button class="tab-btn active" data-tab="basic" type="button">基本信息</button>
+                            <button class="tab-btn" data-tab="camera" type="button">相机设置</button>
+                            <button class="tab-btn" data-tab="gps" type="button">GPS信息</button>
+                        </div>
+
+                        <div class="tab-content">
+                            <div id="basicTab" class="tab-pane active">
+                                <div class="form-group">
+                                    <label for="make">制造商</label>
+                                    <input type="text" id="make" class="form-input" data-field="Make">
+                                </div>
+                                <div class="form-group">
+                                    <label for="model">型号</label>
+                                    <input type="text" id="model" class="form-input" data-field="Model">
+                                </div>
+                                <div class="form-group">
+                                    <label for="datetime">拍摄时间</label>
+                                    <input type="datetime-local" id="datetime" class="form-input" data-field="DateTime">
+                                </div>
+                                <div class="form-group">
+                                    <label for="description">描述</label>
+                                    <textarea id="description" class="form-textarea" data-field="ImageDescription"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="artist">作者</label>
+                                    <input type="text" id="artist" class="form-input" data-field="Artist">
+                                </div>
+                                <div class="form-group">
+                                    <label for="copyright">版权</label>
+                                    <input type="text" id="copyright" class="form-input" data-field="Copyright">
+                                </div>
+                            </div>
+
+                            <div id="cameraTab" class="tab-pane">
+                                <div class="form-group">
+                                    <label for="orientation">方向</label>
+                                    <select id="orientation" class="form-select" data-field="Orientation">
+                                        <option value="1">正常</option>
+                                        <option value="3">旋转180°</option>
+                                        <option value="6">顺时针90°</option>
+                                        <option value="8">逆时针90°</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="fnumber">光圈</label>
+                                    <input type="text" id="fnumber" class="form-input" data-field="FNumber">
+                                </div>
+                                <div class="form-group">
+                                    <label for="exposure">曝光时间</label>
+                                    <input type="text" id="exposure" class="form-input" data-field="ExposureTime" placeholder="例如 1/125">
+                                </div>
+                                <div class="form-group">
+                                    <label for="iso">ISO</label>
+                                    <input type="number" id="iso" class="form-input" data-field="ISOSpeedRatings" min="0">
+                                </div>
+                                <div class="form-group">
+                                    <label for="focal">焦距</label>
+                                    <input type="text" id="focal" class="form-input" data-field="FocalLength" placeholder="例如 35mm">
+                                </div>
+                                <div class="form-group">
+                                    <label for="lens">镜头</label>
+                                    <input type="text" id="lens" class="form-input" data-field="LensModel">
+                                </div>
+                            </div>
+
+                            <div id="gpsTab" class="tab-pane">
+                                <div class="form-group">
+                                    <label for="locationName">地点名称</label>
+                                    <div class="location-input">
+                                        <input type="text" id="locationName" class="form-input" placeholder="输入地点名称或地址">
+                                        <button id="resolveLocation" class="btn btn-primary" type="button">搜索</button>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="latitude">纬度</label>
+                                    <input type="number" id="latitude" class="form-input" step="any" data-field="GPSLatitude">
+                                </div>
+                                <div class="form-group">
+                                    <label for="longitude">经度</label>
+                                    <input type="number" id="longitude" class="form-input" step="any" data-field="GPSLongitude">
+                                </div>
+                                <div class="form-group">
+                                    <label for="altitude">海拔</label>
+                                    <input type="number" id="altitude" class="form-input" step="any" data-field="GPSAltitude">
+                                </div>
+                                <div class="gps-address-box">
+                                    <div class="gps-address-label">地点</div>
+                                    <div id="gpsAddress" class="gps-address-text">未设置</div>
+                                </div>
+                                <div class="form-actions">
+                                    <button id="openMap" class="btn btn-secondary" type="button">在地图上选择</button>
+                                    <button id="removeGPS" class="btn btn-danger" type="button">移除GPS信息</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-actions form-actions-cta">
+                            <button id="removeExif" class="btn btn-outline-danger" type="button">移除所有EXIF信息</button>
+                            <button id="applyChanges" class="btn btn-primary action-apply" type="button">应用更改</button>
+                            <button id="downloadImage" class="btn btn-export" type="button">导出</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="batchPanel" class="batch-panel hidden">
+                <div class="batch-header">
+                    <h3>批量处理</h3>
+                    <div class="batch-stats">
+                        <span id="batchCount">共 0 张图片</span>
+                    </div>
+                </div>
+                <div class="batch-controls">
+                    <button id="applyToAll" class="btn btn-primary" type="button">应用到全部</button>
+                    <button id="removeAllExif" class="btn btn-danger" type="button">移除所有EXIF</button>
+                    <button id="downloadZip" class="btn btn-success" type="button">下载ZIP</button>
+                </div>
+                <div class="batch-table-container">
+                    <table class="batch-table">
+                        <thead>
+                            <tr>
+                                <th>缩略图</th>
+                                <th>文件名</th>
+                                <th>大小</th>
+                                <th>状态</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="batchTableBody"></tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+
+        <div id="progressBar" class="progress-bar hidden">
+            <div class="progress-fill"></div>
+            <span class="progress-text">0%</span>
+        </div>
+
+        <div id="toastContainer" class="toast-container"></div>
+
+        <div id="mapModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>选择GPS位置</h3>
+                    <button id="closeMap" class="btn btn-icon modal-close" type="button">×</button>
+                </div>
+                <div class="modal-body">
+                    <iframe id="mapFrame" src="assets/map.html" class="map-frame"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="scripts/vendor/exifr.min.js"></script>
+    <script src="scripts/vendor/piexif.min.js"></script>
+    <script src="scripts/vendor/jszip.min.js"></script>
+    <script src="scripts/vendor/FileSaver.min.js"></script>
+    <script type="module" src="scripts/main.js"></script>
+</body>
+</html>
